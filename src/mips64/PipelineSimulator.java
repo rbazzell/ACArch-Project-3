@@ -17,7 +17,7 @@ public class PipelineSimulator {
     ExMemStage exMem;
     MemWbStage memWb;
 
-    int register[] = new int[32];
+    int registers[] = new int[32];
 
     int breakAddress = -1;
     boolean quietMode = true;
@@ -71,6 +71,10 @@ public class PipelineSimulator {
       return memWb;
     }
 
+    public int getRegister(int reg) {
+      return registers[reg];
+    }
+
     public boolean getQuiet () {
       return quietMode;
     }
@@ -79,7 +83,7 @@ public class PipelineSimulator {
 
       Command command = Command.UNUSED;
 
-      while (command != command.EXIT) {
+      while (command != Command.EXIT) {
         printMenu();
         command = getCommand();
 
@@ -193,8 +197,8 @@ public class PipelineSimulator {
       pc.setPC(0);
       instExec = 0;
 
-      for (int i = 0; i < register.length; i ++) {
-        register[i] = 0;
+      for (int i = 0; i < registers.length; i ++) {
+        registers[i] = 0;
       }
     }
 
