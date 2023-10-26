@@ -23,5 +23,6 @@ public class ProgramCounter {
   }
 
   public void update() {
+      this.incrPC();
   }
 }

@@ -1,6 +1,10 @@
 package mips64;
 
 public class ExMemStage {
+    //for all of this reference A.18 --> the map
+    //needs store data
+    //needs alu data
+
 
     PipelineSimulator simulator;
     boolean shouldWriteback = false;
