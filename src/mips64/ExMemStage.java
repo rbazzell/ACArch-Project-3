@@ -12,6 +12,7 @@ public class ExMemStage {
     int opcode;
     int aluIntData;
     int storeIntData;
+    Instruction inst;
 
     public ExMemStage(PipelineSimulator sim) {
         simulator = sim;

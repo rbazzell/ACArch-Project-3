@@ -75,6 +75,12 @@ public class PipelineSimulator {
       return registers[reg];
     }
 
+    public void setRegister(int reg, int data) {
+      if (reg > 0 && reg < 32) {
+        registers[reg] = data;
+      }
+    }
+
     public boolean getQuiet () {
       return quietMode;
     }
