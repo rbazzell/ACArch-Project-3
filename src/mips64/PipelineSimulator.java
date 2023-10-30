@@ -17,8 +17,6 @@ public class PipelineSimulator {
     ExMemStage exMem;
     MemWbStage memWb;
 
-    int registers[] = new int[32];
-
     int breakAddress = -1;
     boolean quietMode = true;
     int instExec = 0;
@@ -69,16 +67,6 @@ public class PipelineSimulator {
 
     public MemWbStage getMemWbStage() {
       return memWb;
-    }
-
-    public int getRegister(int reg) {
-      return registers[reg];
-    }
-
-    public void setRegister(int reg, int data) {
-      if (reg > 0 && reg < 32) {
-        registers[reg] = data;
-      }
     }
 
     public boolean getQuiet () {
@@ -202,10 +190,6 @@ public class PipelineSimulator {
       memWb = new MemWbStage(this);
       pc.setPC(0);
       instExec = 0;
-
-      for (int i = 0; i < registers.length; i ++) {
-        registers[i] = 0;
-      }
     }
 
     public void loadMemory() {

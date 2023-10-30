@@ -1,0 +1,14 @@
+0:  LW R1, 4000(R0)
+4:  NOP
+8:  NOP
+12:  NOP
+16:  ADDI R1, R1, 5
+20:  ADDI R2, R0, 1
+24:  NOP
+28:  NOP
+32:  ADD R3, R1, R2
+36:  NOP
+40:  NOP
+44:  NOP
+48:  SW R3, 4004(R0)
+52:  HALT

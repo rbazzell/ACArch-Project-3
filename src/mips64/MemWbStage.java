@@ -11,15 +11,14 @@ public class MemWbStage {
 
     //probably add an old WB reg in here too for forwarding purposes <-- do this (otherwise Dr. G will say its a bad emulation)
     PipelineSimulator simulator;
-    boolean halted, squashed;
+    boolean halted = false, squashed = false, stalled = false;
     boolean shouldWriteback = false;
-    int destReg;
-    int instPC;
-    int opcode;
-    int aluIntData;
+    int instPC = -1;
+    int opcode = 62;
     int loadIntData;
-    Instruction inst;
-    MemWbStage oldMemWb;
+    int aluIntData;
+    int destReg;
+    MemWbStage old;
 
     public MemWbStage(PipelineSimulator sim) {
         simulator = sim;
@@ -30,48 +29,54 @@ public class MemWbStage {
     }
 
     public void update() {
-        //TODO: add squashed insts
-        //TODO: add oldMEMWB stuff (I think it only needs data and dest reg)
-        inst = simulator.getExMemStage().inst;
-        
-        int data;
-        if (isLoad()) {
-            data = loadIntData;
-        } else {
-            data = aluIntData;
+        if (!halted && !stalled && !squashed) {
+            //TODO: add squashed insts
+            //TODO: add oldMEMWB stuff (I think it only needs data and dest reg)
+
+            ExMemStage previous = simulator.getExMemStage();
+            MemWbStage old = new MemWbStage(simulator);
+            old.instPC = instPC;
+            old.opcode = opcode;
+            old.loadIntData = loadIntData;
+            old.aluIntData = aluIntData;
+            old.destReg = destReg;
+            old.shouldWriteback = shouldWriteback;
+            
+            if (Instruction.getNameFromOpcode(previous.opcode) == "LW" && Instruction.getNameFromOpcode(old.opcode) == "LW" ) {
+                simulator.getIdExStage().setIntRegister(destReg, loadIntData);
+            } else if (shouldWriteback && Instruction.getNameFromOpcode(opcode) != "LW") {
+                simulator.getIdExStage().setIntRegister(destReg, aluIntData);
+            }
+            
+            instPC = previous.instPC;
+            opcode = previous.opcode;
+            destReg = previous.destReg;
+            shouldWriteback = previous.shouldWriteback;
+            aluIntData = previous.aluIntData;
+            switch (Instruction.getNameFromOpcode(opcode)) {
+                case "LW":
+                    // this needs to be in the case statement because of our limited memory size
+                    loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
+                    //need to check if we have already generated the stall
+                    if (old.destReg == destReg && Instruction.getNameFromOpcode(old.opcode) == "LW") {
+                        loadIntData = -1;
+                        return;
+                    }
+                    //otherwise, stall to wait one extra cycle
+                    previous.stalled = true;
+                    simulator.getIdExStage().stalled = true;
+                    simulator.getIfIdStage().stalled = true;
+                    simulator.getPCStage().stalled = true;
+                    break;
+                case "SW":
+                    simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData);
+                default:
+                    loadIntData = -1;
+                    break;
+            }
+            halted = Instruction.getNameFromOpcode(opcode) == "HALT";
+        } else if (stalled) {
+            stalled = false;
         }
-
-        if (isWriteBack()) {
-            simulator.setRegister(destReg, data);
-        }
-
-    }
-
-    private boolean isLoad() {
-        return Instruction.getNameFromOpcode(opcode) == "LW";
-    }
-
-    private boolean isWriteBack() {
-        switch (Instruction.getNameFromOpcode(opcode)) {
-            case "LW":
-            case "ADD":
-            case "ADDI":
-            case "SUB":
-            case "MUL":
-            case "DIV":
-            case "AND":
-            case "ANDI":
-            case "OR":
-            case "ORI":
-            case "XOR":
-            case "XORI":
-            case "SLL":
-            case "SRL":
-            case "SRA":
-                shouldWriteback = true;
-            default:
-                shouldWriteback = false;
-        }
-        return shouldWriteback;
     }
 }
