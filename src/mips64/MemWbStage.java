@@ -73,6 +73,8 @@ public class MemWbStage {
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
+        } else if (squashed) {
+            
         }
     }
 
