@@ -63,6 +63,8 @@ public class IdExStage {
                         shouldWriteback = false;
                 }
             } else if (inst.getClass() == JTypeInst.class) { //JTypeInst.class
+                regA = 0;
+                regB = 0;
                 immediate = ((JTypeInst)inst).getOffset();
                 destReg = 0;
                 shouldWriteback = false;

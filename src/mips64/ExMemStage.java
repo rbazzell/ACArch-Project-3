@@ -28,7 +28,6 @@ public class ExMemStage {
             destReg = previous.destReg;
             regA = previous.regA;
             regB = previous.regB;
-
             storeIntData = forward(regB, previous.regBData);
 
 
@@ -101,7 +100,9 @@ public class ExMemStage {
 
     private int forward(int destReg, int defaultData) {
         MemWbStage memWb = simulator.getMemWbStage();
-        if (memWb.destReg == destReg && memWb.shouldWriteback) {
+        if (destReg == 0) {
+            return 0;
+        } else if (memWb.destReg == destReg && memWb.shouldWriteback) {
             return memWb.data;
         } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack) {
             return memWb.oldData;
