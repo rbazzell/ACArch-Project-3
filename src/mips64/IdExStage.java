@@ -13,6 +13,7 @@ public class IdExStage {
     int regBData;
     int immediate;
     int destReg;
+    int regA = 0, regB = 0;
 
     public IdExStage(PipelineSimulator sim) {
         simulator = sim;
@@ -32,7 +33,6 @@ public class IdExStage {
     }
 
     public void update() {
-        int regA = 0, regB = 0;
         if (!halted && !stalled && !squashed) {
             IfIdStage previous = simulator.getIfIdStage();
             instPC = previous.instPC;
@@ -43,14 +43,14 @@ public class IdExStage {
             } else if (inst.getClass() == RTypeInst.class) {
                 regA = ((RTypeInst)inst).getRS();
                 regB = ((RTypeInst)inst).getRT();
-                immediate = ((RTypeInst)inst).shamt;
-                destReg = ((RTypeInst)inst).rd;
+                immediate = ((RTypeInst)inst).getShamt();
+                destReg = ((RTypeInst)inst).getRD();
                 shouldWriteback = true;
             } else if (inst.getClass() == ITypeInst.class) {
                 regA = ((ITypeInst)inst).getRS();
                 regB = ((ITypeInst)inst).getRT();
-                immediate = ((ITypeInst)inst).immed;
-                destReg = ((ITypeInst)inst).rt;
+                immediate = ((ITypeInst)inst).getImmed();
+                destReg = ((ITypeInst)inst).getRT();
                 switch (Instruction.getNameFromOpcode(opcode)) {
                     case "LW":
                     case "ADDI":
@@ -63,25 +63,15 @@ public class IdExStage {
                         shouldWriteback = false;
                 }
             } else if (inst.getClass() == JTypeInst.class) { //JTypeInst.class
-                immediate = ((JTypeInst)inst).offset;
+                immediate = ((JTypeInst)inst).getOffset();
                 destReg = 0;
                 shouldWriteback = false;
             } else {
                 System.err.println("NOT REGISTERING INST TYPE");
             }
 
-            //testing if we need to forward
-            MemWbStage memWb = simulator.getMemWbStage();
-            if (regA == memWb.destReg && memWb.shouldWriteback) {
-                regAData = memWb.aluIntData;
-            } else {
-                regAData = registers[regA];
-            }
-            if (regB == memWb.destReg && memWb.shouldWriteback) {
-                regBData = memWb.aluIntData;
-            } else {
-                regBData = registers[regB];
-            }
+            regAData = registers[regA];
+            regBData = registers[regB];
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;

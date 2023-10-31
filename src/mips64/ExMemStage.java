@@ -5,7 +5,6 @@ public class ExMemStage {
     //needs store data
     //needs alu data
 
-
     PipelineSimulator simulator;
     boolean halted = false, squashed = false, stalled = false;
     boolean shouldWriteback = false;
@@ -14,7 +13,8 @@ public class ExMemStage {
     int aluIntData;
     int storeIntData;
     int destReg;
-
+    int regA, regB;
+    
     public ExMemStage(PipelineSimulator sim) {
         simulator = sim;
     }
@@ -26,51 +26,56 @@ public class ExMemStage {
             opcode = previous.opcode;
             shouldWriteback = previous.shouldWriteback;
             destReg = previous.destReg;
-            storeIntData = previous.regBData;
+            regA = previous.regA;
+            regB = previous.regB;
+
+            storeIntData = forward(regB, previous.regBData);
+
+
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
                 case "SW":
                 case "ADDI":
-                    aluIntData = previous.regAData + previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) + previous.immediate;
                     break;
                 case "ADD":
-                    aluIntData = previous.regAData + previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) + forward(regB, previous.regBData);
                     break;
                 case "SUB":
-                    aluIntData = previous.regAData - previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) - forward(regB, previous.regBData);
                     break;
                 case "MUL":
-                    aluIntData = previous.regAData * previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) * forward(regB, previous.regBData);
                     break;
                 case "DIV":
-                    aluIntData = previous.regAData / previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) / forward(regB, previous.regBData);
                     break;
                 case "AND":
-                    aluIntData = previous.regAData & previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) & forward(regB, previous.regBData);
                     break;
                 case "OR":
-                    aluIntData = previous.regAData | previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) | forward(regB, previous.regBData);
                     break;
                 case "XOR":
-                    aluIntData = previous.regAData ^ previous.regBData;
+                    aluIntData = forward(regA, previous.regAData) ^ forward(regB, previous.regBData);
                     break;
                 case "ANDI":
-                    aluIntData = previous.regAData & previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) & previous.immediate;
                     break;
                 case "ORI":
-                    aluIntData = previous.regAData | previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) | previous.immediate;
                     break;
                 case "XORI":
-                    aluIntData = previous.regAData ^ previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) ^ previous.immediate;
                     break;
                 case "SLL":
-                    aluIntData = previous.regAData << previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) << previous.immediate;
                     break;
                 case "SRL":
-                    aluIntData = previous.regAData >>> previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) >>> previous.immediate;
                     break;
                 case "SRA":
-                    aluIntData = previous.regAData >> previous.immediate;
+                    aluIntData = forward(regA, previous.regAData) >> previous.immediate;
                     break;
                 /*case "BEQ":
                 case "BNE":
@@ -91,6 +96,17 @@ public class ExMemStage {
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
+        } 
+    }
+
+    private int forward(int destReg, int defaultData) {
+        MemWbStage memWb = simulator.getMemWbStage();
+        if (memWb.destReg == destReg && memWb.shouldWriteback) {
+            return memWb.data;
+        } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack) {
+            return memWb.oldData;
+        } else {
+            return defaultData;
         }
     }
 }

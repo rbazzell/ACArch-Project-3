@@ -17,8 +17,10 @@ public class MemWbStage {
     int opcode = 62;
     int loadIntData;
     int aluIntData;
+    int data;
     int destReg;
-    MemWbStage old;
+    int oldDestReg, oldData, oldOpcode = 62;
+    boolean oldShouldWriteBack;
 
     public MemWbStage(PipelineSimulator sim) {
         simulator = sim;
@@ -32,22 +34,9 @@ public class MemWbStage {
         if (!halted && !stalled && !squashed) {
             //TODO: add squashed insts
             //TODO: add oldMEMWB stuff (I think it only needs data and dest reg)
+            update_old();
 
             ExMemStage previous = simulator.getExMemStage();
-            MemWbStage old = new MemWbStage(simulator);
-            old.instPC = instPC;
-            old.opcode = opcode;
-            old.loadIntData = loadIntData;
-            old.aluIntData = aluIntData;
-            old.destReg = destReg;
-            old.shouldWriteback = shouldWriteback;
-            
-            if (Instruction.getNameFromOpcode(previous.opcode) == "LW" && Instruction.getNameFromOpcode(old.opcode) == "LW" ) {
-                simulator.getIdExStage().setIntRegister(destReg, loadIntData);
-            } else if (shouldWriteback && Instruction.getNameFromOpcode(opcode) != "LW") {
-                simulator.getIdExStage().setIntRegister(destReg, aluIntData);
-            }
-            
             instPC = previous.instPC;
             opcode = previous.opcode;
             destReg = previous.destReg;
@@ -58,7 +47,7 @@ public class MemWbStage {
                     // this needs to be in the case statement because of our limited memory size
                     loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
                     //need to check if we have already generated the stall
-                    if (old.destReg == destReg && Instruction.getNameFromOpcode(old.opcode) == "LW") {
+                    if (oldDestReg == destReg && Instruction.getNameFromOpcode(oldOpcode) == "LW") {
                         loadIntData = -1;
                         return;
                     }
@@ -74,9 +63,27 @@ public class MemWbStage {
                     loadIntData = -1;
                     break;
             }
+
+            if (Instruction.getNameFromOpcode(opcode) == "LW") {
+                data = loadIntData;
+            } else {
+                data = aluIntData;
+            }
+            
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
+        }
+    }
+
+    private void update_old() {
+        oldData = data;
+        oldDestReg = destReg;
+        oldOpcode = opcode;
+        oldShouldWriteBack = shouldWriteback;
+
+        if (oldShouldWriteBack) {
+            simulator.getIdExStage().setIntRegister(oldDestReg, oldData);
         }
     }
 }

@@ -2,7 +2,7 @@ package mips64;
 
 public class IfIdStage {
     PipelineSimulator simulator;
-    Instruction inst;
+    Instruction inst = Instruction.getInstructionFromName("NOP");
     boolean halted = false, squashed = false, stalled = false;
     int instPC = -1;
     int opcode = 62;
