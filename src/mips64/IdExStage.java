@@ -159,9 +159,9 @@ public class IdExStage {
         MemWbStage memWb = simulator.getMemWbStage();
         if (destReg == 0) {
             return 0;
-        } else if (memWb.destReg == destReg && memWb.shouldWriteback) {
+        } else if (memWb.destReg == destReg && memWb.shouldWriteback && !memWb.squashed) {
             return memWb.data;
-        } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack) {
+        } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack && !memWb.oldSquashed) {
             return memWb.oldData;
         } else {
             return defaultData;

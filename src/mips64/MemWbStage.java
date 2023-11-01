@@ -21,6 +21,7 @@ public class MemWbStage {
     int destReg;
     int oldDestReg, oldData, oldOpcode = 62;
     boolean oldShouldWriteBack;
+    boolean oldSquashed;
 
     public MemWbStage(PipelineSimulator sim) {
         simulator = sim;
@@ -84,8 +85,9 @@ public class MemWbStage {
         oldDestReg = destReg;
         oldOpcode = opcode;
         oldShouldWriteBack = shouldWriteback;
+        oldSquashed = squashed;
 
-        if (oldShouldWriteBack) {
+        if (oldShouldWriteBack && !oldSquashed) {
             simulator.getIdExStage().setIntRegister(oldDestReg, oldData);
         }
     }
