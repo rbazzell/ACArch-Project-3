@@ -59,6 +59,8 @@ public class IdExStage {
                     case "XORI":
                         shouldWriteback = true;
                         break;
+                    case "JR":
+                    case "JALR":
                     default:
                         shouldWriteback = false;
                 }
@@ -74,6 +76,12 @@ public class IdExStage {
 
             regAData = registers[regA];
             regBData = registers[regB];
+            switch (Instruction.getNameFromOpcode(opcode)) {
+                case "JAL":
+                case "JALR":
+                    registers[31] = simulator.getPCStage().getPC();
+                default:
+            }
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;

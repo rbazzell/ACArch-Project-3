@@ -29,7 +29,7 @@ public class ExMemStage {
             regA = previous.regA;
             regB = previous.regB;
             storeIntData = forward(regB, previous.regBData);
-
+            ProgramCounter simPC = simulator.getPCStage();
 
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
@@ -81,11 +81,21 @@ public class ExMemStage {
                 case "BLTZ":
                 case "BLEZ":
                 case "BGEZ":
-                case "BGTZ":
+                case "BGTZ":*/
                 case "J":
+                    simPC.setPC(simPC.getPC() - 4 +  previous.immediate);
+                    break;
                 case "JAL":
+                    simPC.setPC(simPC.getPC() - 4 +  previous.immediate);
+                    break;
                 case "JR":
-                case "JALR":*/
+                    aluIntData = forward(regA, previous.regAData);
+                    simulator.getPCStage().setPC(aluIntData);
+                    break;
+                case "JALR":
+                    aluIntData = forward(regA, previous.regAData);
+                    simulator.getPCStage().setPC(aluIntData);
+                    break;
                 case "NOP":
                 case "HALT":
                 default:
