@@ -24,8 +24,12 @@ public class ProgramCounter {
     }
 
     public void update() {
+        IdExStage idEx = simulator.getIdExStage();
         if (!stalled) {
             this.incrPC();
+            if (idEx.jumpPC != -1) {
+                setPC(idEx.jumpPC);
+            }
         } else if (stalled) {
             stalled = false;
         }
