@@ -14,6 +14,7 @@ public class IdExStage {
     int immediate;
     int destReg;
     int regA = 0, regB = 0;
+    int jumpPC = -1;
 
     public IdExStage(PipelineSimulator sim) {
         simulator = sim;
@@ -35,6 +36,7 @@ public class IdExStage {
     public void update() {
         if (!halted && !stalled && !squashed) {
             IfIdStage previous = simulator.getIfIdStage();
+            ProgramCounter simPC = simulator.getPCStage();
             instPC = previous.instPC;
             opcode = previous.opcode;
             inst = previous.inst;
@@ -59,6 +61,8 @@ public class IdExStage {
                     case "XORI":
                         shouldWriteback = true;
                         break;
+                    case "JR":
+                    case "JALR":
                     default:
                         shouldWriteback = false;
                 }
@@ -74,9 +78,41 @@ public class IdExStage {
 
             regAData = registers[regA];
             regBData = registers[regB];
+            switch (Instruction.getNameFromOpcode(opcode)) {
+                case "J":
+                    jumpPC = simPC.getPC() + immediate;
+                    break;
+                case "JR":
+                    jumpPC = forward(regA, regAData);
+                    break;
+                case "JAL":
+                    registers[31] = simulator.getPCStage().getPC();
+                    jumpPC = simPC.getPC() + immediate;
+                    break;
+                case "JALR":
+                    registers[31] = simulator.getPCStage().getPC();
+                    jumpPC = forward(regA, regAData);
+                    break;
+                default:
+                    jumpPC = -1;
+            }
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
         }
+    }
+
+    private int forward(int destReg, int defaultData) {
+        MemWbStage memWb = simulator.getMemWbStage();
+        if (destReg == 0) {
+            return 0;
+        } else if (memWb.destReg == destReg && memWb.shouldWriteback) {
+            return memWb.data;
+        } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack) {
+            return memWb.oldData;
+        } else {
+            return defaultData;
+        }
+        
     }
 }

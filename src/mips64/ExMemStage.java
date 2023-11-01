@@ -30,7 +30,6 @@ public class ExMemStage {
             regB = previous.regB;
             storeIntData = forward(regB, previous.regBData);
 
-
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
                 case "SW":
@@ -81,11 +80,11 @@ public class ExMemStage {
                 case "BLTZ":
                 case "BLEZ":
                 case "BGEZ":
-                case "BGTZ":
+                case "BGTZ":*/
                 case "J":
                 case "JAL":
                 case "JR":
-                case "JALR":*/
+                case "JALR":
                 case "NOP":
                 case "HALT":
                 default:
