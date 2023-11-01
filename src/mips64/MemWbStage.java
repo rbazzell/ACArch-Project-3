@@ -60,7 +60,9 @@ public class MemWbStage {
                     simulator.getPCStage().stalled = true;
                     break;
                 case "SW":
-                    simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData);
+                    if (!squashed) { 
+                        simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData); 
+                    }
                 default:
                     loadIntData = -1;
                     break;

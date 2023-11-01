@@ -79,7 +79,7 @@ public class IdExStage {
             regBData = registers[regB];
             ProgramCounter pc = simulator.getPCStage();
             switch (Instruction.getNameFromOpcode(opcode)) {
-                case "BEQ":
+                /*case "BEQ":
                     previous.squashed = true;
                     stall();
                     if (forward(regA, regAData) == forward(regB, regBData)) {
@@ -120,7 +120,7 @@ public class IdExStage {
                     if (forward(regA, regAData) >= 0) {
                         pc.branch = true;
                         pc.jumpPC = pc.getPC() + immediate;
-                    }
+                    }*/
                 case "J":
                     pc.jumpPC = pc.getPC() + immediate;
                     pc.branch = true;
