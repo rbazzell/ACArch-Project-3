@@ -25,7 +25,6 @@ public class ProgramCounter {
     }
 
     public void update() {
-        IdExStage idEx = simulator.getIdExStage();
         if (!stalled && !branch) {
             this.incrPC();
         } else if (stalled) {

@@ -20,8 +20,9 @@ public class ExMemStage {
     }
 
     public void update() {
-        if (!halted && !stalled && !squashed) {
+        if (!halted && !stalled) {
             IdExStage previous = simulator.getIdExStage();
+            squashed = previous.squashed;
             instPC = previous.instPC;
             opcode = previous.opcode;
             shouldWriteback = previous.shouldWriteback;

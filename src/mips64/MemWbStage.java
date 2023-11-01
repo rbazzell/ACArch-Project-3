@@ -31,12 +31,13 @@ public class MemWbStage {
     }
 
     public void update() {
-        if (!halted && !stalled && !squashed) {
+        if (!halted && !stalled) {
             //TODO: add squashed insts
             //TODO: add oldMEMWB stuff (I think it only needs data and dest reg)
             update_old();
 
             ExMemStage previous = simulator.getExMemStage();
+            squashed = previous.squashed;
             instPC = previous.instPC;
             opcode = previous.opcode;
             destReg = previous.destReg;
@@ -74,7 +75,7 @@ public class MemWbStage {
         } else if (stalled) {
             stalled = false;
         } else if (squashed) {
-            
+
         }
     }
 

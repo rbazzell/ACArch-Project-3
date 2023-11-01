@@ -33,9 +33,10 @@ public class IdExStage {
     }
 
     public void update() {
-        if (!halted && !stalled && !squashed) {
+        if (!halted && !stalled) {
             IfIdStage previous = simulator.getIfIdStage();
             ProgramCounter simPC = simulator.getPCStage();
+            squashed = previous.squashed;
             instPC = previous.instPC;
             opcode = previous.opcode;
             inst = previous.inst;
@@ -79,27 +80,44 @@ public class IdExStage {
             regBData = registers[regB];
             ProgramCounter pc = simulator.getPCStage();
             switch (Instruction.getNameFromOpcode(opcode)) {
+                case "BEQ":
+                    previous.squashed = true;
+                case "BNE":
+                    previous.squashed = true;
+                case "BLTZ":
+                    previous.squashed = true;
+                case "BLEZ":
+                    previous.squashed = true;
+                case "BGEZ":
+                    previous.squashed = true;
+                case "BGTZ":
+                    previous.squashed = true;
                 case "J":
                     pc.jumpPC = simPC.getPC() + immediate;
                     pc.branch = true;
+                    previous.squashed = true;    
                     break;
                 case "JR":
                     pc.jumpPC = forward(regA, regAData);
                     pc.branch = true;
+                    previous.squashed = true;    
                     break;
                 case "JAL":
                     registers[31] = simulator.getPCStage().getPC();
                     pc.jumpPC = simPC.getPC() + immediate;
                     pc.branch = true;
+                    previous.squashed = true;    
                     break;
                 case "JALR":
                     registers[31] = simulator.getPCStage().getPC();
                     pc.jumpPC = forward(regA, regAData);
                     pc.branch = true;
+                    previous.squashed = true;    
                     break;
                 default:
                     pc.jumpPC = -1;
                     pc.branch = false;
+                    previous.squashed = false;
                     break;
             }
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";

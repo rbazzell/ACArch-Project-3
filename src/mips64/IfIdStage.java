@@ -13,7 +13,7 @@ public class IfIdStage {
     }
 
     public void update() {
-        if (!halted && !stalled && !squashed) {
+        if (!halted && !stalled) {
             ProgramCounter previous = simulator.getPCStage();
             instPC = previous.getPC();
             inst = simulator.getMemory().getInstAtAddr(instPC);
