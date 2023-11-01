@@ -14,7 +14,6 @@ public class IdExStage {
     int immediate;
     int destReg;
     int regA = 0, regB = 0;
-    int jumpPC = -1;
 
     public IdExStage(PipelineSimulator sim) {
         simulator = sim;
@@ -78,23 +77,30 @@ public class IdExStage {
 
             regAData = registers[regA];
             regBData = registers[regB];
+            ProgramCounter pc = simulator.getPCStage();
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "J":
-                    jumpPC = simPC.getPC() + immediate;
+                    pc.jumpPC = simPC.getPC() + immediate;
+                    pc.branch = true;
                     break;
                 case "JR":
-                    jumpPC = forward(regA, regAData);
+                    pc.jumpPC = forward(regA, regAData);
+                    pc.branch = true;
                     break;
                 case "JAL":
                     registers[31] = simulator.getPCStage().getPC();
-                    jumpPC = simPC.getPC() + immediate;
+                    pc.jumpPC = simPC.getPC() + immediate;
+                    pc.branch = true;
                     break;
                 case "JALR":
                     registers[31] = simulator.getPCStage().getPC();
-                    jumpPC = forward(regA, regAData);
+                    pc.jumpPC = forward(regA, regAData);
+                    pc.branch = true;
                     break;
                 default:
-                    jumpPC = -1;
+                    pc.jumpPC = -1;
+                    pc.branch = false;
+                    break;
             }
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {

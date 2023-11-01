@@ -4,7 +4,8 @@ public class ProgramCounter {
 
     PipelineSimulator simulator;
     int pc;
-    boolean stalled = false;
+    boolean stalled = false, branch = false;
+    int jumpPC;
 
     public ProgramCounter(PipelineSimulator sim) {
         pc = 0;
@@ -25,13 +26,13 @@ public class ProgramCounter {
 
     public void update() {
         IdExStage idEx = simulator.getIdExStage();
-        if (!stalled) {
+        if (!stalled && !branch) {
             this.incrPC();
-            if (idEx.jumpPC != -1) {
-                setPC(idEx.jumpPC);
-            }
         } else if (stalled) {
             stalled = false;
+        } else if (branch) {
+            setPC(jumpPC);
+            branch = false;
         }
     }
 }

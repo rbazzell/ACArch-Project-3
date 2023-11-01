@@ -1,0 +1,10 @@
+0:  LW R1, 4000(R0)
+LABEL top
+4:  LW R2, 4000(R1)
+8:  ADD R3, R3, R2
+12:  ADDI R1, R1, -4
+16:  BEQ R1, R0, end
+20:  J top
+LABEL end
+24:  SW R3, 4044(R0)
+28:  HALT
