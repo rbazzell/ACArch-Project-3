@@ -35,9 +35,9 @@ public class IdExStage {
     public void update() {
         if (!halted && !stalled) {
             IfIdStage previous = simulator.getIfIdStage();
+            opcode = previous.opcode;
             squashed = previous.squashed;
             instPC = previous.instPC;
-            opcode = previous.opcode;
             inst = previous.inst;
             if (inst == null) {
                 inst = Instruction.getInstructionFromName("NOP");
@@ -77,78 +77,8 @@ public class IdExStage {
 
             regAData = registers[regA];
             regBData = registers[regB];
-            ProgramCounter pc = simulator.getPCStage();
-            switch (Instruction.getNameFromOpcode(opcode)) {
-                /*case "BEQ":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) == forward(regB, regBData)) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }
-                case "BNE":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) != forward(regB, regBData)) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }
-                case "BLTZ":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) < 0) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }
-                case "BLEZ":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) <= 0) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }
-                case "BGEZ":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) > 0) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }
-                case "BGTZ":
-                    previous.squashed = true;
-                    stall();
-                    if (forward(regA, regAData) >= 0) {
-                        pc.branch = true;
-                        pc.jumpPC = pc.getPC() + immediate;
-                    }*/
-                case "J":
-                    pc.jumpPC = pc.getPC() + immediate;
-                    pc.branch = true;
-                    previous.squashed = true;    
-                    break;
-                case "JR":
-                    pc.jumpPC = forward(regA, regAData);
-                    pc.branch = true;
-                    previous.squashed = true;    
-                    break;
-                case "JAL":
-                    registers[31] = pc.getPC();
-                    pc.jumpPC = pc.getPC() + immediate;
-                    pc.branch = true;
-                    previous.squashed = true;    
-                    break;
-                case "JALR":
-                    registers[31] = pc.getPC();
-                    pc.jumpPC = forward(regA, regAData);
-                    pc.branch = true;
-                    previous.squashed = true;    
-                    break;
-                default:
-                    pc.jumpPC = -1;
-                    pc.branch = false;
-                    previous.squashed = false;
-                    break;
-            }
+            
+            control(previous); //Mux & comparators for control logic - doesn't execute if squashed!
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
@@ -169,8 +99,101 @@ public class IdExStage {
         
     }
 
+    private boolean insert_stall(int regA, int regB) {
+        ExMemStage exMem = simulator.getExMemStage();
+        if (regA == exMem.destReg || regB == exMem.destReg) {
+            stall();
+            return true;
+        }
+        return false;
+    }
+
     private void stall() {
+        stalled = true;
         simulator.getIfIdStage().stalled = true;
         simulator.getPCStage().stalled = true;
+    }
+
+    private void control(IfIdStage previous) {
+        ProgramCounter pc = simulator.getPCStage();
+        if (squashed) {
+            pc.jumpPC = -1;
+            pc.branch = false;
+            previous.squashed = false;
+            return;
+        }
+        switch (Instruction.getNameFromOpcode(opcode)) {
+            case "BEQ":
+                if (forward(regA, regAData) == forward(regB, regBData)) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "BNE":
+                if (forward(regA, regAData) != forward(regB, regBData)) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "BLTZ":
+                
+                if (forward(regA, regAData) < 0) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "BLEZ":
+                
+                if (forward(regA, regAData) <= 0) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "BGEZ":
+                if (forward(regA, regAData) > 0) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "BGTZ":
+                if (forward(regA, regAData) >= 0) {
+                    pc.branch = true;
+                    pc.jumpPC = pc.getPC() + immediate;
+                    previous.squashed = true;
+                }
+                break;
+            case "J":
+                pc.jumpPC = pc.getPC() + immediate;
+                pc.branch = true;
+                previous.squashed = true;    
+                break;
+            case "JR":
+                pc.jumpPC = forward(regA, regAData);
+                pc.branch = true;
+                previous.squashed = true;    
+                break;
+            case "JAL":
+                registers[31] = pc.getPC();
+                pc.jumpPC = pc.getPC() + immediate;
+                pc.branch = true;
+                previous.squashed = true;    
+                break;
+            case "JALR":
+                registers[31] = pc.getPC();
+                pc.jumpPC = forward(regA, regAData);
+                pc.branch = true;
+                previous.squashed = true;    
+                break;
+            default:
+                pc.jumpPC = -1;
+                pc.branch = false;
+                previous.squashed = false;
+                break;
+        }
     }
 }
