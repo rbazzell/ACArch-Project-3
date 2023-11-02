@@ -4,7 +4,7 @@ public class IdExStage {
     int[] registers = new int[32];
 
     PipelineSimulator simulator;
-    Instruction inst;
+    Instruction inst = Instruction.getInstructionFromName("NOP");
     boolean halted = false, squashed = false, stalled = false;
     boolean shouldWriteback = false;
     int instPC = -1;
@@ -38,9 +38,7 @@ public class IdExStage {
             squashed = previous.squashed;
             opcode = previous.opcode;
             inst = previous.inst;
-            if (inst == null) {
-                inst = Instruction.getInstructionFromName("NOP");
-            } else if (inst.getClass() == RTypeInst.class) {
+            if (inst.getClass() == RTypeInst.class) {
                 regA = ((RTypeInst)inst).getRS();
                 regB = ((RTypeInst)inst).getRT();
                 tempImmediate = 0;
