@@ -11,7 +11,7 @@ public class IdExStage {
     int opcode = 62;
     int regAData, tempAData;
     int regBData, tempBData;
-    int immediate, tempImmediate;
+    int immediate, tempImmediate, shamt, tempShamt;
     int destReg;
     int regA = 0, regB = 0;
 
@@ -36,20 +36,21 @@ public class IdExStage {
         IfIdStage previous = simulator.getIfIdStage();
         if (!halted && !stalled) {
             opcode = previous.opcode;
-            squashed = previous.squashed;
             inst = previous.inst;
             if (inst == null) {
                 inst = Instruction.getInstructionFromName("NOP");
             } else if (inst.getClass() == RTypeInst.class) {
                 regA = ((RTypeInst)inst).getRS();
                 regB = ((RTypeInst)inst).getRT();
-                tempImmediate = ((RTypeInst)inst).getShamt();
+                tempImmediate = 0;
+                tempShamt = ((RTypeInst)inst).getShamt();
                 destReg = ((RTypeInst)inst).getRD();
                 shouldWriteback = true;
             } else if (inst.getClass() == ITypeInst.class) {
                 regA = ((ITypeInst)inst).getRS();
                 regB = ((ITypeInst)inst).getRT();
                 tempImmediate = ((ITypeInst)inst).getImmed();
+                tempShamt = 0;
                 destReg = ((ITypeInst)inst).getRT();
                 switch (Instruction.getNameFromOpcode(opcode)) {
                     case "LW":
@@ -66,6 +67,7 @@ public class IdExStage {
                 regA = 0;
                 regB = 0;
                 tempImmediate = ((JTypeInst)inst).getOffset();
+                tempShamt = 0;
                 destReg = 0;
                 shouldWriteback = false;
             } else {
@@ -76,7 +78,7 @@ public class IdExStage {
             
             control(previous); //Mux & comparators for control logic - doesn't execute if squashed!
             
-            halted = Instruction.getNameFromOpcode(opcode) == "HALT";
+            halted = Instruction.getNameFromOpcode(opcode) == "HALT" && !squashed;
         }
         if (stalled) {
             stalled = false;
@@ -84,7 +86,9 @@ public class IdExStage {
             regAData = tempAData;
             regBData = tempBData;
             immediate = tempImmediate;
+            shamt = tempShamt;
             instPC = previous.instPC;
+            squashed = previous.squashed;
         }
     }
 

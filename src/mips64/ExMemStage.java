@@ -12,6 +12,7 @@ public class ExMemStage {
     int opcode = 62;
     int tempAluIntData, aluIntData;
     int tempStoreIntData, storeIntData;
+    int shamt;
     int destReg;
     int regA, regB;
     
@@ -67,19 +68,19 @@ public class ExMemStage {
                     tempAluIntData = forward(regA, previous.regAData) ^ previous.immediate;
                     break;
                 case "SLL":
-                    tempAluIntData = forward(regA, previous.regAData) << previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) << previous.shamt;
                     break;
                 case "SRL":
-                    tempAluIntData = forward(regA, previous.regAData) >>> previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) >>> previous.shamt;
                     break;
                 case "SRA":
-                    tempAluIntData = forward(regA, previous.regAData) >> previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) >> previous.shamt;
                     break;
                 default:
                     tempAluIntData = 0;
                     break;
             }
-            halted = Instruction.getNameFromOpcode(opcode) == "HALT";
+            halted = Instruction.getNameFromOpcode(opcode) == "HALT" && !squashed;
         }
         if (stalled) {
             stalled = false;
@@ -97,6 +98,8 @@ public class ExMemStage {
             return memWb.data;
         } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack && !memWb.oldSquashed) {
             return memWb.oldData;
+        } else if (simulator.idEx.getIntRegister(destReg) != defaultData) {
+            return simulator.idEx.getIntRegister(destReg);
         } else {
             return defaultData;
         }

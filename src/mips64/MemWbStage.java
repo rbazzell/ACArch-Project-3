@@ -68,7 +68,7 @@ public class MemWbStage {
                 data = aluIntData;
             }
             insert_stall(previous);
-            halted = Instruction.getNameFromOpcode(opcode) == "HALT";
+            halted = Instruction.getNameFromOpcode(opcode) == "HALT" && !squashed;
         }
         if (stalled) {
             stalled = false;

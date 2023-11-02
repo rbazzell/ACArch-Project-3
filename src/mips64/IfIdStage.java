@@ -18,7 +18,7 @@ public class IfIdStage {
             instPC = previous.getPC();
             inst = simulator.getMemory().getInstAtAddr(instPC);
             opcode = inst.getOpcode();
-            halted = Instruction.getNameFromOpcode(opcode) == "HALT";
+            halted = Instruction.getNameFromOpcode(opcode) == "HALT" && !squashed;
         } else if (stalled) {
             stalled = false;
         }
