@@ -35,6 +35,8 @@ public class IdExStage {
     public void update() {
         IfIdStage previous = simulator.getIfIdStage();
         if (!halted && !stalled) {
+            instPC = previous.instPC;
+            squashed = previous.squashed;
             opcode = previous.opcode;
             inst = previous.inst;
             if (inst == null) {
@@ -87,8 +89,6 @@ public class IdExStage {
             regBData = tempBData;
             immediate = tempImmediate;
             shamt = tempShamt;
-            instPC = previous.instPC;
-            squashed = previous.squashed;
         }
     }
 
@@ -100,6 +100,8 @@ public class IdExStage {
             return memWb.data;
         } else if (memWb.oldDestReg == destReg && memWb.oldShouldWriteBack && !memWb.oldSquashed) {
             return memWb.oldData;
+        } else if (getIntRegister(destReg) != defaultData) {
+            return getIntRegister(destReg);
         } else {
             return defaultData;
         }
