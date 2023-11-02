@@ -6,6 +6,7 @@ public class ProgramCounter {
     int pc;
     boolean stalled = false, branch = false;
     int jumpPC;
+    int stalls = 0;
 
     public ProgramCounter(PipelineSimulator sim) {
         pc = 0;
@@ -28,6 +29,7 @@ public class ProgramCounter {
         if (!stalled && !branch) {
             this.incrPC();
         } else if (stalled) {
+            stalls ++;
             stalled = false;
         } else if (branch) {
             setPC(jumpPC);

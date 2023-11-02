@@ -45,7 +45,7 @@ HALT
 End Assembly
 --begin main data
 Begin Data 4000 52
-45
+50
 29
 6
 0

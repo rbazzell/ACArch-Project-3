@@ -261,6 +261,7 @@ public class PipelineSimulator {
         dumpStatus();
       }
       System.out.println("Total instructions executed = " + instExec);
+      System.out.println("Stalled instruciton count = " + pc.stalls);
     }
 
     public void step() {
