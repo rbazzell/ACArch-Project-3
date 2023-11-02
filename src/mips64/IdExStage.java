@@ -35,7 +35,6 @@ public class IdExStage {
     public void update() {
         IfIdStage previous = simulator.getIfIdStage();
         if (!halted && !stalled) {
-            instPC = previous.instPC;
             squashed = previous.squashed;
             opcode = previous.opcode;
             inst = previous.inst;
@@ -89,6 +88,7 @@ public class IdExStage {
             regBData = tempBData;
             immediate = tempImmediate;
             shamt = tempShamt;
+            instPC = previous.instPC;
         }
     }
 
@@ -177,14 +177,14 @@ public class IdExStage {
                 }
                 break;
             case "BGEZ":
-                if (forward(regA, tempAData) > 0) {
+                if (forward(regA, tempAData) >= 0) {
                     pc.branch = true;
                     pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BGTZ":
-                if (forward(regA, tempAData) >= 0) {
+                if (forward(regA, tempAData) > 0) {
                     pc.branch = true;
                     pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
