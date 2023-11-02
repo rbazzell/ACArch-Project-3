@@ -10,8 +10,8 @@ public class ExMemStage {
     boolean shouldWriteback = false;
     int instPC = -1;
     int opcode = 62;
-    int aluIntData;
-    int storeIntData;
+    int tempAluIntData, aluIntData;
+    int tempStoreIntData, storeIntData;
     int destReg;
     int regA, regB;
     
@@ -20,82 +20,75 @@ public class ExMemStage {
     }
 
     public void update() {
+        IdExStage previous = simulator.getIdExStage();
         if (!halted && !stalled) {
-            IdExStage previous = simulator.getIdExStage();
+            insert_stall(previous);
             squashed = previous.squashed;
-            instPC = previous.instPC;
-            opcode = previous.opcode;
             shouldWriteback = previous.shouldWriteback;
             destReg = previous.destReg;
             regA = previous.regA;
             regB = previous.regB;
-            storeIntData = forward(regB, previous.regBData);
+            tempStoreIntData = forward(regB, previous.regBData);
 
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
                 case "SW":
                 case "ADDI":
-                    aluIntData = forward(regA, previous.regAData) + previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) + previous.immediate;
                     break;
                 case "ADD":
-                    aluIntData = forward(regA, previous.regAData) + forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) + forward(regB, previous.regBData);
                     break;
                 case "SUB":
-                    aluIntData = forward(regA, previous.regAData) - forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) - forward(regB, previous.regBData);
                     break;
                 case "MUL":
-                    aluIntData = forward(regA, previous.regAData) * forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) * forward(regB, previous.regBData);
                     break;
                 case "DIV":
-                    aluIntData = forward(regA, previous.regAData) / forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) / forward(regB, previous.regBData);
                     break;
                 case "AND":
-                    aluIntData = forward(regA, previous.regAData) & forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) & forward(regB, previous.regBData);
                     break;
                 case "OR":
-                    aluIntData = forward(regA, previous.regAData) | forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) | forward(regB, previous.regBData);
                     break;
                 case "XOR":
-                    aluIntData = forward(regA, previous.regAData) ^ forward(regB, previous.regBData);
+                    tempAluIntData = forward(regA, previous.regAData) ^ forward(regB, previous.regBData);
                     break;
                 case "ANDI":
-                    aluIntData = forward(regA, previous.regAData) & previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) & previous.immediate;
                     break;
                 case "ORI":
-                    aluIntData = forward(regA, previous.regAData) | previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) | previous.immediate;
                     break;
                 case "XORI":
-                    aluIntData = forward(regA, previous.regAData) ^ previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) ^ previous.immediate;
                     break;
                 case "SLL":
-                    aluIntData = forward(regA, previous.regAData) << previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) << previous.immediate;
                     break;
                 case "SRL":
-                    aluIntData = forward(regA, previous.regAData) >>> previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) >>> previous.immediate;
                     break;
                 case "SRA":
-                    aluIntData = forward(regA, previous.regAData) >> previous.immediate;
+                    tempAluIntData = forward(regA, previous.regAData) >> previous.immediate;
                     break;
-                /*case "BEQ":
-                case "BNE":
-                case "BLTZ":
-                case "BLEZ":
-                case "BGEZ":
-                case "BGTZ":*/
-                case "J":
-                case "JAL":
-                case "JR":
-                case "JALR":
-                case "NOP":
-                case "HALT":
                 default:
-                    aluIntData = 0;
+                    tempAluIntData = 0;
                     break;
             }
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
-        } else if (stalled) {
+        }
+        if (stalled) {
             stalled = false;
-        } 
+        } else {
+            aluIntData = tempAluIntData;
+            storeIntData = tempStoreIntData;
+            instPC = previous.instPC;
+            opcode = previous.opcode;
+        }
     }
 
     private int forward(int destReg, int defaultData) {
@@ -110,4 +103,18 @@ public class ExMemStage {
             return defaultData;
         }
     }
+
+    private void insert_stall(IdExStage previous) {
+        if (Instruction.getNameFromOpcode(opcode) != "LW") {
+            return;
+        }
+        if ((previous.regA == destReg || previous.regB == destReg)) {
+            //stall
+            stalled = true;
+            simulator.getIdExStage().stalled = true;
+            simulator.getIfIdStage().stalled = true;
+            simulator.getPCStage().stalled = true;
+        }
+    }
+
 }

@@ -48,17 +48,6 @@ public class MemWbStage {
                 case "LW":
                     // this needs to be in the case statement because of our limited memory size
                     loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
-                    //need to check if we have already generated the stall
-                    if (oldDestReg == destReg && Instruction.getNameFromOpcode(oldOpcode) == "LW") {
-                        loadIntData = -1;
-                        return;
-                    }
-                    //otherwise, stall to wait one extra cycle
-                    previous.stalled = true;
-                    simulator.getIdExStage().stalled = true;
-                    simulator.getIfIdStage().stalled = true;
-                    simulator.getPCStage().stalled = true;
-                    break;
                 case "SW":
                     if (!squashed) { 
                         simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData); 
@@ -77,8 +66,6 @@ public class MemWbStage {
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
         } else if (stalled) {
             stalled = false;
-        } else if (squashed) {
-
         }
     }
 
