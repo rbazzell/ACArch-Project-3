@@ -22,14 +22,14 @@ public class ExMemStage {
     public void update() {
         IdExStage previous = simulator.getIdExStage();
         if (!halted && !stalled) {
-            insert_stall(previous);
+            instPC = previous.instPC;
+            opcode = previous.opcode;
             squashed = previous.squashed;
             shouldWriteback = previous.shouldWriteback;
             destReg = previous.destReg;
             regA = previous.regA;
             regB = previous.regB;
             tempStoreIntData = forward(regB, previous.regBData);
-
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
                 case "SW":
@@ -86,8 +86,6 @@ public class ExMemStage {
         } else {
             aluIntData = tempAluIntData;
             storeIntData = tempStoreIntData;
-            instPC = previous.instPC;
-            opcode = previous.opcode;
         }
     }
 
@@ -101,19 +99,6 @@ public class ExMemStage {
             return memWb.oldData;
         } else {
             return defaultData;
-        }
-    }
-
-    private void insert_stall(IdExStage previous) {
-        if (Instruction.getNameFromOpcode(opcode) != "LW") {
-            return;
-        }
-        if ((previous.regA == destReg || previous.regB == destReg)) {
-            //stall
-            stalled = true;
-            simulator.getIdExStage().stalled = true;
-            simulator.getIfIdStage().stalled = true;
-            simulator.getPCStage().stalled = true;
         }
     }
 

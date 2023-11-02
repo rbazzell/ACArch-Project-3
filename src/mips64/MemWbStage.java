@@ -48,6 +48,7 @@ public class MemWbStage {
                 case "LW":
                     // this needs to be in the case statement because of our limited memory size
                     loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
+                    break;
                 case "SW":
                     if (!squashed) { 
                         simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData); 
@@ -78,6 +79,20 @@ public class MemWbStage {
 
         if (oldShouldWriteBack && !oldSquashed) {
             simulator.getIdExStage().setIntRegister(oldDestReg, oldData);
+        }
+    }
+    
+    private void insert_stall() {
+        if (Instruction.getNameFromOpcode(opcode) != "LW") {
+            return;
+        }
+        IdExStage idEx = simulator.getIdExStage();
+        if ((idEx.regA == destReg || idEx.regB == destReg)) {
+            //stall
+            stalled = true;
+            simulator.getIdExStage().stalled = true;
+            simulator.getIfIdStage().stalled = true;
+            simulator.getPCStage().stalled = true;
         }
     }
 }
