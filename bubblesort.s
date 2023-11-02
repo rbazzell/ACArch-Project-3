@@ -1,0 +1,99 @@
+-- a program to bubblesort an integer array
+--
+--
+Begin Assembly
+-- array pointer is stored in R30
+ADDI R30, R0, 4000
+LABEL WHILESTART
+--
+-- set R1 to be our boolean (true at the start of a loop)
+ADDI R1, R0, 1
+--
+-- setup of the for loop
+-- load final array address (4000 + length) into R2
+LW R2, 0(R30)
+SLL R2, R2, 2
+ADD R2, R2, R30
+--
+-- R3 is our index variable, starting at 4004
+ADDI R3, R30, 4
+LABEL FORSTART
+-- skip the next iteration if the index equals the array length
+BEQ R2, R3, FOREND
+--increment index variable
+ADDI R3, R3, 4
+--
+-- load array[i] & array[i-1] into R4 and R5 respectively
+LW R4, 0(R3)
+LW R5, -4(R3)
+--
+-- compare array[i] < array[i-1]
+SUB R6, R4, R5
+-- skip the if when array[i] >= array[i-1]
+BGEZ R6, ENDIF
+-- swap array[i] and array[i-1] in memory
+SW R5, 0(R3)
+SW R4, -4(R3)
+-- set our boolean (sorted?) to false
+ADDI R1, R0, 0
+LABEL ENDIF
+--jump to the beginning of the for loop
+J FORSTART
+LABEL FOREND
+BEQ R1, R0, WHILESTART
+HALT
+End Assembly
+--begin main data
+Begin Data 4000 52
+45
+29
+6
+0
+18
+31
+11
+15
+15
+10
+15
+15
+9
+19
+17
+1
+23
+25
+12
+19
+34
+15
+4
+31
+5
+14
+21
+20
+1
+10
+30
+26
+3
+22
+33
+13
+27
+39
+14
+22
+3
+20
+23
+21
+34
+31
+30
+24
+31
+19
+38
+End Data

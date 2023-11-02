@@ -43,15 +43,19 @@ public class MemWbStage {
             opcode = previous.opcode;
             destReg = previous.destReg;
             shouldWriteback = previous.shouldWriteback;
-            aluIntData = previous.aluIntData;
+            aluIntData = previous.tempAluIntData;
             switch (Instruction.getNameFromOpcode(opcode)) {
                 case "LW":
                     // this needs to be in the case statement because of our limited memory size
-                    loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
+                    if (!squashed) {
+                        loadIntData = simulator.getMemory().getIntDataAtAddr(aluIntData);
+                    } else {
+                        loadIntData = -1;
+                    }
                     break;
                 case "SW":
                     if (!squashed) { 
-                        simulator.getMemory().setIntDataAtAddr(previous.aluIntData, previous.storeIntData); 
+                        simulator.getMemory().setIntDataAtAddr(previous.tempAluIntData, previous.storeIntData); 
                     }
                 default:
                     loadIntData = -1;
@@ -63,9 +67,10 @@ public class MemWbStage {
             } else {
                 data = aluIntData;
             }
-            
+            insert_stall(previous);
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
-        } else if (stalled) {
+        }
+        if (stalled) {
             stalled = false;
         }
     }
@@ -82,14 +87,16 @@ public class MemWbStage {
         }
     }
     
-    private void insert_stall() {
-        if (Instruction.getNameFromOpcode(opcode) != "LW") {
+    private void insert_stall(ExMemStage previous) {
+        if (Instruction.getNameFromOpcode(opcode) != "LW" || squashed) {
             return;
         }
         IdExStage idEx = simulator.getIdExStage();
         if ((idEx.regA == destReg || idEx.regB == destReg)) {
             //stall
             stalled = true;
+            previous.squashed = true;
+            simulator.getExMemStage().stalled = true;
             simulator.getIdExStage().stalled = true;
             simulator.getIfIdStage().stalled = true;
             simulator.getPCStage().stalled = true;
