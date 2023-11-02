@@ -9,9 +9,9 @@ public class IdExStage {
     boolean shouldWriteback = false;
     int instPC = -1;
     int opcode = 62;
-    int regAData;
-    int regBData;
-    int immediate;
+    int regAData, tempAData;
+    int regBData, tempBData;
+    int immediate, tempImmediate;
     int destReg;
     int regA = 0, regB = 0;
 
@@ -33,24 +33,23 @@ public class IdExStage {
     }
 
     public void update() {
+        IfIdStage previous = simulator.getIfIdStage();
         if (!halted && !stalled) {
-            IfIdStage previous = simulator.getIfIdStage();
             opcode = previous.opcode;
             squashed = previous.squashed;
-            instPC = previous.instPC;
             inst = previous.inst;
             if (inst == null) {
                 inst = Instruction.getInstructionFromName("NOP");
             } else if (inst.getClass() == RTypeInst.class) {
                 regA = ((RTypeInst)inst).getRS();
                 regB = ((RTypeInst)inst).getRT();
-                immediate = ((RTypeInst)inst).getShamt();
+                tempImmediate = ((RTypeInst)inst).getShamt();
                 destReg = ((RTypeInst)inst).getRD();
                 shouldWriteback = true;
             } else if (inst.getClass() == ITypeInst.class) {
                 regA = ((ITypeInst)inst).getRS();
                 regB = ((ITypeInst)inst).getRT();
-                immediate = ((ITypeInst)inst).getImmed();
+                tempImmediate = ((ITypeInst)inst).getImmed();
                 destReg = ((ITypeInst)inst).getRT();
                 switch (Instruction.getNameFromOpcode(opcode)) {
                     case "LW":
@@ -60,28 +59,32 @@ public class IdExStage {
                     case "XORI":
                         shouldWriteback = true;
                         break;
-                    case "JR":
-                    case "JALR":
                     default:
                         shouldWriteback = false;
                 }
             } else if (inst.getClass() == JTypeInst.class) { //JTypeInst.class
                 regA = 0;
                 regB = 0;
-                immediate = ((JTypeInst)inst).getOffset();
+                tempImmediate = ((JTypeInst)inst).getOffset();
                 destReg = 0;
                 shouldWriteback = false;
             } else {
                 System.err.println("NOT REGISTERING INST TYPE");
             }
-
-            regAData = registers[regA];
-            regBData = registers[regB];
+            tempAData = registers[regA];
+            tempBData = registers[regB];
             
             control(previous); //Mux & comparators for control logic - doesn't execute if squashed!
+            
             halted = Instruction.getNameFromOpcode(opcode) == "HALT";
-        } else if (stalled) {
+        }
+        if (stalled) {
             stalled = false;
+        } else {
+            regAData = tempAData;
+            regBData = tempBData;
+            immediate = tempImmediate;
+            instPC = previous.instPC;
         }
     }
 
@@ -99,24 +102,38 @@ public class IdExStage {
         
     }
 
-    private boolean insert_stall(int regA, int regB) {
+    private void insert_stall() {
         ExMemStage exMem = simulator.getExMemStage();
-        if (regA == exMem.destReg || regB == exMem.destReg) {
-            stall();
-            return true;
+        if ((exMem.destReg == regA || exMem.destReg == regB) && exMem.shouldWriteback && isBranch(opcode)) {
+            //stall
+            stalled = true;
+            simulator.getIfIdStage().stalled = true;
+            simulator.getPCStage().stalled = true;
         }
-        return false;
     }
 
-    private void stall() {
-        stalled = true;
-        simulator.getIfIdStage().stalled = true;
-        simulator.getPCStage().stalled = true;
-    }
+    private boolean isBranch(int opcode) {
+        switch(Instruction.getNameFromOpcode(opcode)) {
+            case "BEQ":
+            case "BNE":
+            case "BLTZ":
+            case "BLEZ":
+            case "BGEZ":
+            case "BGTZ":
+            case "J":
+            case "JR":
+            case "JAL":
+            case "JALR":
+                return true;
+            default:
+                return false;
+        }
+    } 
 
     private void control(IfIdStage previous) {
         ProgramCounter pc = simulator.getPCStage();
-        if (squashed) {
+        insert_stall();
+        if (squashed || stalled) {
             pc.jumpPC = -1;
             pc.branch = false;
             previous.squashed = false;
@@ -124,68 +141,68 @@ public class IdExStage {
         }
         switch (Instruction.getNameFromOpcode(opcode)) {
             case "BEQ":
-                if (forward(regA, regAData) == forward(regB, regBData)) {
+                if (forward(regA, tempAData) == forward(regB, tempBData)) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BNE":
-                if (forward(regA, regAData) != forward(regB, regBData)) {
+                if (forward(regA, tempAData) != forward(regB, tempBData)) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BLTZ":
                 
-                if (forward(regA, regAData) < 0) {
+                if (forward(regA, tempAData) < 0) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BLEZ":
                 
-                if (forward(regA, regAData) <= 0) {
+                if (forward(regA, tempAData) <= 0) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BGEZ":
-                if (forward(regA, regAData) > 0) {
+                if (forward(regA, tempAData) > 0) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "BGTZ":
-                if (forward(regA, regAData) >= 0) {
+                if (forward(regA, tempAData) >= 0) {
                     pc.branch = true;
-                    pc.jumpPC = pc.getPC() + immediate;
+                    pc.jumpPC = pc.getPC() + tempImmediate;
                     previous.squashed = true;
                 }
                 break;
             case "J":
-                pc.jumpPC = pc.getPC() + immediate;
+                pc.jumpPC = pc.getPC() + tempImmediate;
                 pc.branch = true;
                 previous.squashed = true;    
                 break;
             case "JR":
-                pc.jumpPC = forward(regA, regAData);
+                pc.jumpPC = forward(regA, tempAData);
                 pc.branch = true;
                 previous.squashed = true;    
                 break;
             case "JAL":
                 registers[31] = pc.getPC();
-                pc.jumpPC = pc.getPC() + immediate;
+                pc.jumpPC = pc.getPC() + tempImmediate;
                 pc.branch = true;
                 previous.squashed = true;    
                 break;
             case "JALR":
                 registers[31] = pc.getPC();
-                pc.jumpPC = forward(regA, regAData);
+                pc.jumpPC = forward(regA, tempAData);
                 pc.branch = true;
                 previous.squashed = true;    
                 break;
